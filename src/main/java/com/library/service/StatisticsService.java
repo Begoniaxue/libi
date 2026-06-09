@@ -382,4 +382,138 @@ public class StatisticsService {
         }
         return new ArrayList<>(groupedData.values());
     }
+
+    public Map<String, Object> getAllStatisticsForScreen(LocalDate startDate, LocalDate endDate, int limit) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        LocalDate today = LocalDate.now();
+        LocalDate actualStart = startDate != null ? startDate : today.minusDays(30);
+        LocalDate actualEnd = endDate != null ? endDate : today;
+
+        // Dashboard指标
+        Map<String, Object> dashboard = new LinkedHashMap<>();
+        dashboard.put("totalBooks", bookRepository.count());
+        dashboard.put("totalReaders", readerRepository.count());
+        dashboard.put("todayBorrow", borrowRecordRepository.countByBorrowDateRange(today, today));
+        dashboard.put("todayReturn", borrowRecordRepository.countByReturnDateRange(today, today));
+        dashboard.put("overdueCount", borrowRecordRepository.countOverdue());
+        BigDecimal totalFine = borrowRecordRepository.sumFineAmountByDateRange(
+                today.withDayOfMonth(1), today);
+        BigDecimal totalCompensation = borrowRecordRepository.sumCompensationAmountByDateRange(
+                today.withDayOfMonth(1), today);
+        dashboard.put("monthlyIncome", totalFine.add(totalCompensation));
+        result.put("dashboard", dashboard);
+
+        // 分类统计（馆藏分类占比）
+        List<Object[]> categoryStats = bookRepository.countByCategory();
+        List<Map<String, Object>> categoryList = new ArrayList<>();
+        for (Object[] stat : categoryStats) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("name", stat[0]);
+            item.put("count", stat[1] != null ? ((Number) stat[1]).longValue() : 0);
+            categoryList.add(item);
+        }
+        result.put("categoryStats", categoryList);
+
+        // 年龄段统计
+        List<Object[]> ageStats = readerRepository.countByAgeGroup();
+        List<Map<String, Object>> ageList = new ArrayList<>();
+        for (Object[] stat : ageStats) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("name", stat[0] != null ? stat[0].toString() : "未知");
+            item.put("count", stat[1] != null ? ((Number) stat[1]).longValue() : 0);
+            ageList.add(item);
+        }
+        result.put("ageStats", ageList);
+
+        // 近30天借阅趋势
+        Map<String, Object> trendStats = new LinkedHashMap<>();
+        List<String> dates = new ArrayList<>();
+        List<Long> borrowData = new ArrayList<>();
+        List<Long> returnData = new ArrayList<>();
+
+        // 按日期统计借阅和归还
+        Map<LocalDate, Long> borrowMap = new HashMap<>();
+        Map<LocalDate, Long> returnMap = new HashMap<>();
+
+        List<Object[]> dailyBorrows = borrowRecordRepository.countDailyBorrows(actualStart, actualEnd);
+        for (Object[] row : dailyBorrows) {
+            String dateStr = row[0].toString();
+            LocalDate date = LocalDate.parse(dateStr);
+            borrowMap.put(date, ((Number) row[1]).longValue());
+        }
+
+        List<Object[]> dailyReturns = borrowRecordRepository.countDailyReturns(actualStart, actualEnd);
+        for (Object[] row : dailyReturns) {
+            String dateStr = row[0].toString();
+            LocalDate date = LocalDate.parse(dateStr);
+            returnMap.put(date, ((Number) row[1]).longValue());
+        }
+
+        // 生成近30天的连续日期
+        for (int i = 29; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            dates.add(date.format(java.time.format.DateTimeFormatter.ofPattern("MM-dd")));
+            borrowData.add(borrowMap.getOrDefault(date, 0L));
+            returnData.add(returnMap.getOrDefault(date, 0L));
+        }
+
+        trendStats.put("dates", dates);
+        trendStats.put("borrowData", borrowData);
+        trendStats.put("returnData", returnData);
+        result.put("trendStats", trendStats);
+
+        // 热门分类借阅排行
+        List<Object[]> hotCategoryStats = bookRepository.findHotCategories(actualStart, actualEnd);
+        List<Map<String, Object>> hotCategoryList = new ArrayList<>();
+        for (Object[] stat : hotCategoryStats) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("name", stat[0]);
+            item.put("count", stat[1] != null ? ((Number) stat[1]).longValue() : 0);
+            hotCategoryList.add(item);
+        }
+        result.put("hotCategoryStats", hotCategoryList);
+
+        // 热门图书TOP10
+        Pageable topPageable = PageRequest.of(0, limit);
+        List<Object[]> hotBooks = bookRepository.findHotBooks(actualStart, actualEnd, topPageable);
+        List<Map<String, Object>> hotBookList = new ArrayList<>();
+        for (Object[] book : hotBooks) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            Long bookId = ((Number) book[0]).longValue();
+            item.put("id", bookId);
+            item.put("name", book[1]);
+            item.put("borrowCount", book[2] != null ? ((Number) book[2]).longValue() : 0);
+
+            // 获取图书详细信息
+            bookRepository.findById(bookId).ifPresent(b -> {
+                item.put("author", b.getAuthor());
+                item.put("categoryName", b.getCategory());
+            });
+            hotBookList.add(item);
+        }
+        Map<String, Object> hotBooksResult = new LinkedHashMap<>();
+        hotBooksResult.put("list", hotBookList);
+        result.put("hotBooks", hotBooksResult);
+
+        // 实时借阅动态（最近的借阅记录）
+        List<Map<String, Object>> realtimeActivities = new ArrayList<>();
+        List<BorrowRecord> recentRecords = borrowRecordRepository.findRecentRecords(PageRequest.of(0, 20));
+        for (BorrowRecord record : recentRecords) {
+            Map<String, Object> activity = new LinkedHashMap<>();
+            readerRepository.findById(record.getReaderId()).ifPresent(reader -> {
+                activity.put("readerName", reader.getName());
+            });
+            bookRepository.findById(record.getBookId()).ifPresent(book -> {
+                activity.put("bookName", book.getName());
+            });
+            activity.put("time", record.getCreateTime() != null ?
+                    record.getCreateTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")) : "");
+            activity.put("status", record.getStatus() == 1 ? "success" : "warning");
+            activity.put("statusText", record.getStatus() == 1 ? "借阅中" : "已归还");
+            realtimeActivities.add(activity);
+        }
+        result.put("realtimeActivities", realtimeActivities);
+
+        return result;
+    }
 }

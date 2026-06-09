@@ -80,13 +80,7 @@ public class StatisticsController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             @RequestParam(defaultValue = "10") int limit) {
-        Map<String, Object> result = new java.util.LinkedHashMap<>();
-        result.put("collection", statisticsService.getCollectionStatistics(startDate, endDate));
-        result.put("borrow", statisticsService.getBorrowStatistics(startDate, endDate));
-        result.put("reader", statisticsService.getReaderStatistics(startDate, endDate));
-        result.put("hotResources", statisticsService.getHotResourcesStatistics(startDate, endDate, limit));
-        result.put("fee", statisticsService.getFeeStatistics(startDate, endDate));
-        return Result.success(result);
+        return Result.success(statisticsService.getAllStatisticsForScreen(startDate, endDate, limit));
     }
 
     @GetMapping("/export/books/excel")

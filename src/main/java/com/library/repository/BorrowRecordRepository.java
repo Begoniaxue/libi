@@ -118,4 +118,14 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
     List<BorrowRecord> findByBorrowDateRange(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', br.returnDate, '%Y-%m-%d') as period, COUNT(br) " +
+           "FROM BorrowRecord br WHERE br.returnDate IS NOT NULL AND br.returnDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY FUNCTION('DATE_FORMAT', br.returnDate, '%Y-%m-%d') ORDER BY period")
+    List<Object[]> countDailyReturns(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT br FROM BorrowRecord br ORDER BY br.borrowDate DESC, br.id DESC")
+    List<BorrowRecord> findRecentRecords(Pageable pageable);
 }

@@ -1182,11 +1182,13 @@ onBeforeUnmount(() => {
 
 .chart-container {
   flex: 1;
-  min-height: 0;
+  min-height: 220px;
+  width: 100%;
 }
 
 .chart-container.large {
-  height: 100%;
+  min-height: 260px;
+  width: 100%;
 }
 
 .ranking-container,
