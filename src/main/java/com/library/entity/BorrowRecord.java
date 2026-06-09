@@ -34,6 +34,25 @@ public class BorrowRecord {
     @Column(name = "return_date")
     private LocalDate returnDate;
 
+    @Column(name = "renew_count", nullable = false)
+    private Integer renewCount = 0;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Column(name = "last_renew_date")
+    private LocalDate lastRenewDate;
+
+    @Column(name = "overdue_days", nullable = false)
+    private Integer overdueDays = 0;
+
+    @Column(name = "fine_amount", nullable = false)
+    private java.math.BigDecimal fineAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "compensation_amount", nullable = false)
+    private java.math.BigDecimal compensationAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "paid_amount", nullable = false)
+    private java.math.BigDecimal paidAmount = java.math.BigDecimal.ZERO;
+
     @Column(name = "status", nullable = false)
     private Integer status = 1;
 
@@ -70,6 +89,18 @@ public class BorrowRecord {
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public LocalDate getReturnDate() { return returnDate; }
     public void setReturnDate(LocalDate returnDate) { this.returnDate = returnDate; }
+    public Integer getRenewCount() { return renewCount; }
+    public void setRenewCount(Integer renewCount) { this.renewCount = renewCount; }
+    public LocalDate getLastRenewDate() { return lastRenewDate; }
+    public void setLastRenewDate(LocalDate lastRenewDate) { this.lastRenewDate = lastRenewDate; }
+    public Integer getOverdueDays() { return overdueDays; }
+    public void setOverdueDays(Integer overdueDays) { this.overdueDays = overdueDays; }
+    public java.math.BigDecimal getFineAmount() { return fineAmount; }
+    public void setFineAmount(java.math.BigDecimal fineAmount) { this.fineAmount = fineAmount; }
+    public java.math.BigDecimal getCompensationAmount() { return compensationAmount; }
+    public void setCompensationAmount(java.math.BigDecimal compensationAmount) { this.compensationAmount = compensationAmount; }
+    public java.math.BigDecimal getPaidAmount() { return paidAmount; }
+    public void setPaidAmount(java.math.BigDecimal paidAmount) { this.paidAmount = paidAmount; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
     public Integer getIsOverdue() { return isOverdue; }

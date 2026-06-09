@@ -35,12 +35,18 @@ CREATE TABLE reader (
     email VARCHAR(100) COMMENT '邮箱',
     id_card VARCHAR(18) COMMENT '身份证号',
     address VARCHAR(200) COMMENT '地址',
+    birthday DATE COMMENT '出生日期',
+    identity_type VARCHAR(20) DEFAULT '其他' COMMENT '身份类型：学生/教师/其他',
+    credit_score INT NOT NULL DEFAULT 100 COMMENT '信用分',
+    violation_count INT NOT NULL DEFAULT 0 COMMENT '违规次数',
     status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-正常 0-注销',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_card_no(card_no),
     INDEX idx_name(name),
-    INDEX idx_phone(phone)
+    INDEX idx_phone(phone),
+    INDEX idx_identity_type(identity_type),
+    INDEX idx_credit_score(credit_score)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='读者表';
 
 CREATE TABLE borrow_record (
@@ -50,7 +56,13 @@ CREATE TABLE borrow_record (
     borrow_date DATE NOT NULL COMMENT '借书日期',
     due_date DATE NOT NULL COMMENT '应还日期',
     return_date DATE COMMENT '实际还书日期',
-    status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-借阅中 2-已归还 3-已逾期',
+    renew_count INT NOT NULL DEFAULT 0 COMMENT '续借次数',
+    last_renew_date DATE COMMENT '最后续借日期',
+    overdue_days INT NOT NULL DEFAULT 0 COMMENT '逾期天数',
+    fine_amount DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '罚款金额',
+    compensation_amount DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '赔偿金额',
+    paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '已缴金额',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-借阅中 2-已归还 3-已逾期 4-已赔偿',
     is_overdue TINYINT NOT NULL DEFAULT 0 COMMENT '是否逾期：0-否 1-是',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -60,8 +72,28 @@ CREATE TABLE borrow_record (
     INDEX idx_reader_id(reader_id),
     INDEX idx_status(status),
     INDEX idx_borrow_date(borrow_date),
-    INDEX idx_due_date(due_date)
+    INDEX idx_due_date(due_date),
+    INDEX idx_return_date(return_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='借阅记录表';
+
+CREATE TABLE IF NOT EXISTS fee_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    reader_id BIGINT NOT NULL COMMENT '读者ID',
+    borrow_record_id BIGINT COMMENT '关联借阅记录ID',
+    fee_type VARCHAR(20) NOT NULL COMMENT '费用类型：逾期罚款/赔偿/其他',
+    amount DECIMAL(10,2) NOT NULL COMMENT '费用金额',
+    paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '已缴金额',
+    is_paid TINYINT NOT NULL DEFAULT 0 COMMENT '是否已缴：0-否 1-是',
+    remark VARCHAR(500) COMMENT '备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (reader_id) REFERENCES reader(id),
+    FOREIGN KEY (borrow_record_id) REFERENCES borrow_record(id),
+    INDEX idx_reader_id(reader_id),
+    INDEX idx_fee_type(fee_type),
+    INDEX idx_is_paid(is_paid),
+    INDEX idx_create_time(create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='费用记录表';
 
 INSERT INTO book (isbn, name, author, publisher, category, description, location, total_quantity, available_quantity) VALUES
 ('9787020002207', '红楼梦', '曹雪芹', '人民文学出版社', '古典文学', '中国古典四大名著之一', 'A区01架', 5, 5),

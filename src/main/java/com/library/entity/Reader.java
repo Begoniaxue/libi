@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,6 +37,19 @@ public class Reader {
     @Column(name = "address", length = 200)
     private String address;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Column(name = "birthday")
+    private LocalDate birthday;
+
+    @Column(name = "identity_type", length = 20)
+    private String identityType = "其他";
+
+    @Column(name = "credit_score", nullable = false)
+    private Integer creditScore = 100;
+
+    @Column(name = "violation_count", nullable = false)
+    private Integer violationCount = 0;
+
     @Column(name = "status", nullable = false)
     private Integer status = 1;
 
@@ -65,6 +79,14 @@ public class Reader {
     public void setIdCard(String idCard) { this.idCard = idCard; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+    public LocalDate getBirthday() { return birthday; }
+    public void setBirthday(LocalDate birthday) { this.birthday = birthday; }
+    public String getIdentityType() { return identityType; }
+    public void setIdentityType(String identityType) { this.identityType = identityType; }
+    public Integer getCreditScore() { return creditScore; }
+    public void setCreditScore(Integer creditScore) { this.creditScore = creditScore; }
+    public Integer getViolationCount() { return violationCount; }
+    public void setViolationCount(Integer violationCount) { this.violationCount = violationCount; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getCreateTime() { return createTime; }
