@@ -259,6 +259,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search, Refresh, Download, Document, Warning, Money, Wallet, Tickets } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getFeeStatistics, exportFeeExcel, exportStatisticsPdf, downloadFile } from '@/api/statistics'

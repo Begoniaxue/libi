@@ -72,7 +72,7 @@
             </el-table-column>
             <el-table-column prop="name" label="图书名称" min-width="180" show-overflow-tooltip />
             <el-table-column prop="author" label="作者" width="120" show-overflow-tooltip />
-            <el-table-column prop="category" label="分类" width="100" show-overflow-tooltip />
+            <el-table-column prop="categoryName" label="分类" width="100" show-overflow-tooltip />
             <el-table-column prop="borrowCount" label="借阅次数" width="100" align="center">
               <template #default="{ row }">
                 <el-tag type="primary" effect="dark">{{ row.borrowCount }}</el-tag>
@@ -96,7 +96,7 @@
           <el-table :data="coldBooks" border stripe style="width: 100%;" max-height="500">
             <el-table-column prop="name" label="图书名称" min-width="180" show-overflow-tooltip />
             <el-table-column prop="author" label="作者" width="120" show-overflow-tooltip />
-            <el-table-column prop="category" label="分类" width="100" show-overflow-tooltip />
+            <el-table-column prop="categoryName" label="分类" width="100" show-overflow-tooltip />
             <el-table-column prop="borrowCount" label="借阅次数" width="100" align="center">
               <template #default="{ row }">
                 <el-tag type="info" effect="plain">{{ row.borrowCount || 0 }}</el-tag>
@@ -138,6 +138,7 @@
 <script setup>
 import { ref, reactive, onMounted, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search, Refresh, Download, Document, TrendCharts, ColdDrink, Histogram } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import {

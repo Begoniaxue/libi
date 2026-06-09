@@ -71,7 +71,7 @@
       <el-col :xs="12" :sm="12" :md="6" :lg="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-item">
-            <el-icon size="40" color="#E6A23C"><UserPlus /></el-icon>
+            <el-icon size="40" color="#E6A23C"><Plus /></el-icon>
             <div class="stat-info">
               <div class="stat-label">新增读者数</div>
               <div class="stat-value">{{ stats.newReaders || 0 }}</div>
@@ -186,6 +186,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search, Refresh, Document, Picture, User, Avatar, Plus, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getReaderStatistics, exportReadersExcel, exportStatisticsPdf, downloadFile } from '@/api/statistics'

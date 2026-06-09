@@ -138,7 +138,7 @@
         <el-card class="stat-card" shadow="hover">
           <div class="stat-item">
             <div class="stat-icon icon-pink">
-              <el-icon size="28"><Percent /></el-icon>
+              <el-icon size="28"><TrendCharts /></el-icon>
             </div>
             <div class="stat-content">
               <div class="stat-label">续借率</div>
@@ -213,6 +213,7 @@
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search, Refresh, Download, Document, Reading, CircleCheck, Warning, RefreshRight, List, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import { getBorrowStatistics, exportBorrowExcel, exportStatisticsPdf, downloadFile } from '@/api/statistics'
@@ -245,9 +246,14 @@ const periodStats = reactive({
   yearBorrow: 0
 })
 
+const dailyBorrows = ref([])
+const dailyReturns = ref([])
+const weeklyBorrows = ref([])
+const monthlyBorrows = ref([])
+
 const formatPercent = (value) => {
   if (value === null || value === undefined) return '0.00%'
-  return (Number(value) * 100).toFixed(2) + '%'
+  return Number(value).toFixed(2) + '%'
 }
 
 const handleQuickFilter = (value) => {
@@ -309,6 +315,10 @@ const loadData = async () => {
       if (res.data.periodStats) {
         Object.assign(periodStats, res.data.periodStats)
       }
+      dailyBorrows.value = res.data.dailyBorrows || []
+      dailyReturns.value = res.data.dailyReturns || []
+      weeklyBorrows.value = res.data.weeklyBorrows || []
+      monthlyBorrows.value = res.data.monthlyBorrows || []
       loadTrendChart()
     }
   } catch (error) {
@@ -444,30 +454,53 @@ const generateTrendData = () => {
   const start = dayjs(startDate.value)
   const end = dayjs(endDate.value)
   
+  const borrowMap = new Map()
+  const returnMap = new Map()
+  
   if (trendType.value === 'day') {
+    dailyBorrows.value.forEach(item => {
+      const date = dayjs(item.date).format('YYYY-MM-DD')
+      borrowMap.set(date, item.count || 0)
+    })
+    dailyReturns.value.forEach(item => {
+      const date = dayjs(item.date).format('YYYY-MM-DD')
+      returnMap.set(date, item.count || 0)
+    })
+    
     let current = start.clone()
     while (current.isBefore(end) || current.isSame(end, 'day')) {
+      const dateKey = current.format('YYYY-MM-DD')
       xData.push(current.format('MM-DD'))
-      borrowData.push(Math.floor(Math.random() * 50) + 10)
-      returnData.push(Math.floor(Math.random() * 45) + 5)
+      borrowData.push(borrowMap.get(dateKey) || 0)
+      returnData.push(returnMap.get(dateKey) || 0)
       current = current.add(1, 'day')
     }
   } else if (trendType.value === 'week') {
+    weeklyBorrows.value.forEach(item => {
+      borrowMap.set(item.week, item.count || 0)
+    })
+    
     let current = start.clone().startOf('week')
     const endWeek = end.clone().endOf('week')
     while (current.isBefore(endWeek) || current.isSame(endWeek, 'week')) {
+      const weekKey = current.format('YYYY-MM-DD')
       xData.push(current.format('MM-DD'))
-      borrowData.push(Math.floor(Math.random() * 300) + 50)
-      returnData.push(Math.floor(Math.random() * 280) + 30)
+      borrowData.push(borrowMap.get(weekKey) || 0)
+      returnData.push(0)
       current = current.add(1, 'week')
     }
   } else if (trendType.value === 'month') {
+    monthlyBorrows.value.forEach(item => {
+      borrowMap.set(item.month, item.count || 0)
+    })
+    
     let current = start.clone().startOf('month')
     const endMonth = end.clone().endOf('month')
     while (current.isBefore(endMonth) || current.isSame(endMonth, 'month')) {
+      const monthKey = current.format('YYYY-MM')
       xData.push(current.format('YYYY-MM'))
-      borrowData.push(Math.floor(Math.random() * 1200) + 200)
-      returnData.push(Math.floor(Math.random() * 1100) + 150)
+      borrowData.push(borrowMap.get(monthKey) || 0)
+      returnData.push(0)
       current = current.add(1, 'month')
     }
   }

@@ -113,7 +113,7 @@
               <el-card class="stat-card" shadow="hover">
                 <div class="stat-item">
                   <div class="stat-icon icon-orange">
-                    <el-icon size="26"><UserPlus /></el-icon>
+                    <el-icon size="26"><Plus /></el-icon>
                   </div>
                   <div class="stat-info">
                     <div class="stat-label">新增读者</div>
@@ -329,7 +329,7 @@
         <el-collapse-item name="suggestions">
           <template #title>
             <div class="collapse-title">
-              <el-icon><Lightbulb /></el-icon>
+              <el-icon><Star /></el-icon>
               <span>运营分析建议</span>
             </div>
           </template>
@@ -368,6 +368,11 @@
 <script setup>
 import { ref, reactive, nextTick, onBeforeUnmount, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  Document, Download, Picture, DataAnalysis, Reading, Plus, User,
+  Tickets, CircleCheck, Warning, Wallet, Collection,
+  TrendCharts, Star
+} from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import {

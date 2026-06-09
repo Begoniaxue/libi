@@ -44,25 +44,38 @@ public class StatisticsService {
         result.put("availableBooks", bookRepository.countAvailableBooks());
         result.put("totalQuantity", bookRepository.sumTotalQuantity());
         result.put("availableQuantity", bookRepository.sumAvailableQuantity());
-        result.put("newBooksCount", bookRepository.countByCreateTimeRange(startTime, endTime));
+        result.put("newBooks", bookRepository.countByCreateTimeRange(startTime, endTime));
 
         List<Object[]> categoryStats = bookRepository.countByCategory();
         List<Map<String, Object>> categoryList = new ArrayList<>();
         long totalQty = bookRepository.sumTotalQuantity();
         for (Object[] stat : categoryStats) {
             Map<String, Object> item = new HashMap<>();
-            item.put("category", stat[0]);
+            item.put("name", stat[0] != null ? stat[0].toString() : "未知");
+            item.put("count", stat[1]);
             item.put("bookCount", stat[1]);
             item.put("quantity", stat[2]);
             item.put("percentage", totalQty > 0 ?
                     Math.round(((Long) stat[2]) * 100.0 / totalQty * 100) / 100.0 : 0);
             categoryList.add(item);
         }
+        result.put("categoryStats", categoryList);
         result.put("categoryDistribution", categoryList);
 
+        List<Map<String, Object>> typeList = new ArrayList<>();
+        Map<String, Object> typeItem = new HashMap<>();
+        typeItem.put("name", "图书");
+        typeItem.put("count", bookRepository.count());
+        typeList.add(typeItem);
+        result.put("typeStats", typeList);
+
+        Map<String, Object> stagnantBooks = new HashMap<>();
         Pageable pageable = PageRequest.of(0, 100);
         List<Book> inactiveBooks = bookRepository.findInactiveBooks(
                 LocalDate.now().minusMonths(6), LocalDate.now(), pageable);
+        stagnantBooks.put("list", inactiveBooks);
+        stagnantBooks.put("total", inactiveBooks.size());
+        result.put("stagnantBooks", stagnantBooks);
         result.put("inactiveBooksCount", inactiveBooks.size());
         result.put("inactiveBooks", inactiveBooks);
 
@@ -87,8 +100,8 @@ public class StatisticsService {
         long overdueCount = borrowRecordRepository.countOverdueByDateRange(actualStart, actualEnd);
         long renewCount = borrowRecordRepository.countRenewByDateRange(actualStart, actualEnd);
 
-        result.put("totalBorrows", totalBorrows);
-        result.put("totalReturns", totalReturns);
+        result.put("totalBorrow", totalBorrows);
+        result.put("totalReturn", totalReturns);
         result.put("overdueCount", overdueCount);
         result.put("renewCount", renewCount);
         result.put("returnRate", totalBorrows > 0 ?
@@ -103,6 +116,8 @@ public class StatisticsService {
         if (days <= 31) {
             result.put("dailyBorrows", formatTimeSeriesData(
                     borrowRecordRepository.countDailyBorrows(actualStart, actualEnd), "date"));
+            result.put("dailyReturns", formatTimeSeriesData(
+                    borrowRecordRepository.countDailyReturns(actualStart, actualEnd), "date"));
         } else if (days <= 180) {
             result.put("weeklyBorrows", formatTimeSeriesData(
                     borrowRecordRepository.countWeeklyBorrows(actualStart, actualEnd), "week"));
@@ -112,13 +127,15 @@ public class StatisticsService {
         }
 
         LocalDate today = LocalDate.now();
-        result.put("todayBorrows", borrowRecordRepository.countByBorrowDateRange(today, today));
-        result.put("weekBorrows", borrowRecordRepository.countByBorrowDateRange(
+        Map<String, Object> periodStats = new HashMap<>();
+        periodStats.put("todayBorrow", borrowRecordRepository.countByBorrowDateRange(today, today));
+        periodStats.put("weekBorrow", borrowRecordRepository.countByBorrowDateRange(
                 today.minusDays(7), today));
-        result.put("monthBorrows", borrowRecordRepository.countByBorrowDateRange(
+        periodStats.put("monthBorrow", borrowRecordRepository.countByBorrowDateRange(
                 today.withDayOfMonth(1), today));
-        result.put("yearBorrows", borrowRecordRepository.countByBorrowDateRange(
+        periodStats.put("yearBorrow", borrowRecordRepository.countByBorrowDateRange(
                 today.withDayOfYear(1), today));
+        result.put("periodStats", periodStats);
 
         return result;
     }
@@ -250,11 +267,40 @@ public class StatisticsService {
         List<Map<String, Object>> hotCategoryList = new ArrayList<>();
         for (Object[] category : hotCategories) {
             Map<String, Object> item = new HashMap<>();
-            item.put("category", category[0]);
+            item.put("category", category[0] != null ? category[0].toString() : "未知");
             item.put("borrowCount", category[1]);
             hotCategoryList.add(item);
         }
         result.put("hotCategories", hotCategoryList);
+        result.put("categoryStats", hotCategoryList);
+
+        List<Map<String, Object>> hotBookListWithDetails = new ArrayList<>();
+        for (Map<String, Object> book : hotBookList) {
+            Map<String, Object> item = new HashMap<>(book);
+            Long bookId = ((Number) book.get("bookId")).longValue();
+            bookRepository.findById(bookId).ifPresent(b -> {
+                item.put("name", b.getName());
+                item.put("author", b.getAuthor());
+                item.put("categoryName", b.getCategory());
+                item.put("isbn", b.getIsbn());
+            });
+            hotBookListWithDetails.add(item);
+        }
+        result.put("hotBooks", hotBookListWithDetails);
+
+        List<Map<String, Object>> coldBookListWithDetails = new ArrayList<>();
+        for (Map<String, Object> book : coldBookList) {
+            Map<String, Object> item = new HashMap<>(book);
+            Long bookId = ((Number) book.get("bookId")).longValue();
+            bookRepository.findById(bookId).ifPresent(b -> {
+                item.put("name", b.getName());
+                item.put("author", b.getAuthor());
+                item.put("categoryName", b.getCategory());
+                item.put("isbn", b.getIsbn());
+            });
+            coldBookListWithDetails.add(item);
+        }
+        result.put("coldBooks", coldBookListWithDetails);
 
         return result;
     }
@@ -271,23 +317,26 @@ public class StatisticsService {
         BigDecimal totalCompensation = borrowRecordRepository.sumCompensationAmountByDateRange(
                 actualStart, actualEnd);
 
-        result.put("totalFine", totalFine);
-        result.put("totalCompensation", totalCompensation);
-        result.put("totalIncome", totalFine.add(totalCompensation));
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalFine", totalFine);
+        summary.put("totalCompensation", totalCompensation);
+        summary.put("totalIncome", totalFine.add(totalCompensation));
+        summary.put("unpaidAmount", feeRecordRepository.sumUnpaidAmount());
+        summary.put("unpaidCount", feeRecordRepository.countUnpaidRecords());
 
         List<Object[]> feeTypeStats = feeRecordRepository.sumAmountByFeeTypeAndDateRange(
                 startTime, endTime);
         List<Map<String, Object>> feeTypeList = new ArrayList<>();
         for (Object[] stat : feeTypeStats) {
             Map<String, Object> item = new HashMap<>();
+            item.put("name", stat[0] != null ? stat[0].toString() : "未知");
+            item.put("value", stat[1]);
             item.put("feeType", stat[0]);
             item.put("amount", stat[1]);
             feeTypeList.add(item);
         }
-        result.put("feeTypeDistribution", feeTypeList);
-
-        result.put("unpaidAmount", feeRecordRepository.sumUnpaidAmount());
-        result.put("unpaidCount", feeRecordRepository.countUnpaidRecords());
+        summary.put("feeTypeDistribution", feeTypeList);
+        result.put("summary", summary);
 
         List<FeeRecord> unpaidRecords = feeRecordRepository.findUnpaidRecords();
         List<Map<String, Object>> unpaidList = new ArrayList<>();
@@ -302,6 +351,10 @@ public class StatisticsService {
             item.put("createTime", record.getCreateTime());
             unpaidList.add(item);
         }
+        Map<String, Object> unpaidFees = new HashMap<>();
+        unpaidFees.put("list", unpaidList);
+        unpaidFees.put("total", unpaidList.size());
+        result.put("unpaidFees", unpaidFees);
         result.put("unpaidRecords", unpaidList);
 
         List<FeeRecord> feeRecords = feeRecordRepository.findByDateRange(startTime, endTime);
@@ -318,7 +371,10 @@ public class StatisticsService {
             item.put("createTime", record.getCreateTime());
             feeDetailList.add(item);
         }
-        result.put("feeDetails", feeDetailList);
+        Map<String, Object> feeDetails = new HashMap<>();
+        feeDetails.put("list", feeDetailList);
+        feeDetails.put("total", feeDetailList.size());
+        result.put("feeDetails", feeDetails);
 
         return result;
     }

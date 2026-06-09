@@ -109,7 +109,7 @@
             <el-icon size="40" color="#F56C6C"><Warning /></el-icon>
             <div class="stat-info">
               <div class="stat-label">呆滞图书数</div>
-              <div class="stat-value">{{ stats.stagnantBooks || 0 }}</div>
+              <div class="stat-value">{{ stats.stagnantBooks?.total || 0 }}</div>
             </div>
           </div>
         </el-card>
@@ -176,6 +176,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Refresh, Download, Document, Reading, Collection, Tickets, CircleCheck, Plus, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
 import {
