@@ -128,4 +128,7 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
 
     @Query("SELECT br FROM BorrowRecord br ORDER BY br.borrowDate DESC, br.id DESC")
     List<BorrowRecord> findRecentRecords(Pageable pageable);
+
+    @Query("SELECT br FROM BorrowRecord br WHERE br.readerId = :readerId ORDER BY br.borrowDate DESC, br.id DESC")
+    List<BorrowRecord> findTopByReaderIdOrderByBorrowDateDesc(@Param("readerId") Long readerId, Pageable pageable);
 }

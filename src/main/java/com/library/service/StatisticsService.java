@@ -133,28 +133,49 @@ public class StatisticsService {
 
         result.put("totalReaders", readerRepository.count());
         result.put("activeReaders", readerRepository.countActiveReaders());
-        result.put("newReadersCount", readerRepository.countByCreateTimeRange(startTime, endTime));
+        result.put("newReaders", readerRepository.countByCreateTimeRange(startTime, endTime));
+        result.put("violationReaders", readerRepository.countReadersWithViolations());
 
-        Pageable pageable = PageRequest.of(0, 20);
+        Pageable pageable = PageRequest.of(0, 10);
         List<Object[]> activeReaderList = borrowRecordRepository.findActiveReaders(
                 actualStart, actualEnd, pageable);
-        List<Map<String, Object>> activeReaders = new ArrayList<>();
+        List<Map<String, Object>> topActiveReaders = new ArrayList<>();
         for (Object[] arr : activeReaderList) {
+            Long readerId = ((Number) arr[0]).longValue();
             Map<String, Object> item = new HashMap<>();
-            item.put("readerId", arr[0]);
-            item.put("readerName", arr[1]);
+            item.put("id", readerId);
+            item.put("name", arr[1] != null ? arr[1].toString() : "未知");
             item.put("borrowCount", arr[2]);
-            activeReaders.add(item);
+            
+            readerRepository.findById(readerId).ifPresent(reader -> {
+                item.put("cardNo", reader.getCardNo() != null ? reader.getCardNo() : "-");
+                item.put("identityType", reader.getIdentityType() != null ? reader.getIdentityType() : "未知");
+                item.put("creditScore", reader.getCreditScore());
+            });
+            
+            borrowRecordRepository.findTopByReaderIdOrderByBorrowDateDesc(readerId, PageRequest.of(0, 1))
+                    .stream().findFirst().ifPresent(record -> {
+                        item.put("lastBorrowDate", record.getBorrowDate() != null ? 
+                                record.getBorrowDate().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "-");
+                    });
+            
+            if (!item.containsKey("cardNo")) {
+                item.put("cardNo", "-");
+                item.put("identityType", "未知");
+                item.put("lastBorrowDate", "-");
+            }
+            
+            topActiveReaders.add(item);
         }
-        result.put("activeReaderList", activeReaders);
-        result.put("activeReaderCount", activeReaders.size());
+        result.put("topActiveReaders", topActiveReaders);
 
         List<Object[]> identityStats = readerRepository.countByIdentityType();
         List<Map<String, Object>> identityList = new ArrayList<>();
         for (Object[] stat : identityStats) {
             Map<String, Object> item = new HashMap<>();
-            item.put("identityType", stat[0]);
-            item.put("count", stat[1]);
+            String name = stat[0] != null ? stat[0].toString() : "未知";
+            item.put("name", name);
+            item.put("value", stat[1]);
             identityList.add(item);
         }
         result.put("identityDistribution", identityList);
@@ -163,8 +184,9 @@ public class StatisticsService {
         List<Map<String, Object>> ageList = new ArrayList<>();
         for (Object[] stat : ageStats) {
             Map<String, Object> item = new HashMap<>();
-            item.put("ageGroup", stat[0]);
-            item.put("count", stat[1]);
+            String name = stat[0] != null ? stat[0].toString() : "未知";
+            item.put("name", name);
+            item.put("value", stat[1]);
             ageList.add(item);
         }
         result.put("ageDistribution", ageList);
@@ -173,13 +195,12 @@ public class StatisticsService {
         List<Map<String, Object>> creditList = new ArrayList<>();
         for (Object[] stat : creditStats) {
             Map<String, Object> item = new HashMap<>();
-            item.put("creditLevel", stat[0]);
-            item.put("count", stat[1]);
+            String name = stat[0] != null ? stat[0].toString() : "未知";
+            item.put("name", name);
+            item.put("value", stat[1]);
             creditList.add(item);
         }
         result.put("creditDistribution", creditList);
-
-        result.put("readersWithViolations", readerRepository.countReadersWithViolations());
 
         List<Object[]> preferenceByIdentity = readerRepository.findReaderPreferenceByIdentity(
                 actualStart, actualEnd);
