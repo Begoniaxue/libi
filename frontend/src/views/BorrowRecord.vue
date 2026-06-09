@@ -133,14 +133,14 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.isOverdue === 1" type="danger" effect="dark">
+            <el-tag v-if="row.status === 2" type="success">
+              已归还
+            </el-tag>
+            <el-tag v-else-if="row.status === 3 || row.isOverdue === 1" type="danger" effect="dark">
               已逾期
             </el-tag>
             <el-tag v-else-if="row.status === 1" type="primary">
               借阅中
-            </el-tag>
-            <el-tag v-else-if="row.status === 2" type="success">
-              已归还
             </el-tag>
           </template>
         </el-table-column>

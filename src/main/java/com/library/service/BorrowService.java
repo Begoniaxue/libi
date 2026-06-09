@@ -39,10 +39,16 @@ public class BorrowService {
     public Map<String, Object> getRecordPage(int page, int size, Long readerId, Long bookId, Integer status) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createTime"));
         Page<BorrowRecord> recordPage;
-        if (readerId != null) {
+        if (readerId != null && status != null) {
+            recordPage = borrowRecordRepository.findByReaderIdAndStatus(readerId, status, pageable);
+        } else if (readerId != null) {
             recordPage = borrowRecordRepository.findByReaderId(readerId, pageable);
+        } else if (bookId != null && status != null) {
+            recordPage = borrowRecordRepository.findByBookIdAndStatus(bookId, status, pageable);
         } else if (bookId != null) {
             recordPage = borrowRecordRepository.findByBookId(bookId, pageable);
+        } else if (status != null) {
+            recordPage = borrowRecordRepository.findByStatus(status, pageable);
         } else {
             recordPage = borrowRecordRepository.findAll(pageable);
         }

@@ -24,10 +24,16 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
 
     Page<BorrowRecord> findByBookId(Long bookId, Pageable pageable);
 
+    Page<BorrowRecord> findByStatus(Integer status, Pageable pageable);
+
+    Page<BorrowRecord> findByReaderIdAndStatus(Long readerId, Integer status, Pageable pageable);
+
+    Page<BorrowRecord> findByBookIdAndStatus(Long bookId, Integer status, Pageable pageable);
+
     @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.readerId = :readerId AND br.status = 1")
     long countBorrowingByReaderId(@Param("readerId") Long readerId);
 
-    @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.readerId = :readerId AND br.status = 1 AND br.isOverdue = 1")
+    @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.readerId = :readerId AND br.status = 3")
     long countOverdueByReaderId(@Param("readerId") Long readerId);
 
     @Query("SELECT br FROM BorrowRecord br WHERE br.status = 1 AND br.dueDate < :today AND br.isOverdue = 0")
@@ -36,7 +42,7 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
     @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.status = 1")
     long countBorrowing();
 
-    @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.isOverdue = 1 AND br.status = 1")
+    @Query("SELECT COUNT(br) FROM BorrowRecord br WHERE br.status = 3")
     long countOverdue();
 
     @Modifying
