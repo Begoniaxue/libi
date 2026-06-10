@@ -3,17 +3,17 @@
     <van-nav-bar title="罚款明细" left-arrow @click-left="$router.back()" fixed placeholder />
 
     <div class="sticky-wrapper">
-      <div class="summary-card" v-show="summaryData">
+      <div class="summary-card" v-if="summaryData">
         <div class="summary-item">
-          <div class="summary-value">¥{{ summaryData.totalAmount }}</div>
+          <div class="summary-value">¥{{ summaryData?.totalAmount }}</div>
           <div class="summary-label">总罚款</div>
         </div>
         <div class="summary-item">
-          <div class="summary-value text-success">¥{{ summaryData.paidAmount }}</div>
+          <div class="summary-value text-success">¥{{ summaryData?.paidAmount }}</div>
           <div class="summary-label">已缴纳</div>
         </div>
         <div class="summary-item">
-          <div class="summary-value text-danger">¥{{ summaryData.unpaidAmount }}</div>
+          <div class="summary-value text-danger">¥{{ summaryData?.unpaidAmount }}</div>
           <div class="summary-label">待缴纳</div>
         </div>
       </div>
@@ -33,28 +33,28 @@
           finished-text="没有更多了"
           @load="onLoad"
         >
-          <div class="fee-item" v-for="record in list" :key="record.id">
+          <div class="fee-item" v-for="record in list" :key="record?.id">
             <div class="fee-header">
               <div class="fee-type">
-                <span class="type-icon">{{ getTypeIcon(record.feeType) }}</span>
-                <span class="type-text">{{ record.feeType }}</span>
+                <span class="type-icon">{{ getTypeIcon(record?.feeType) }}</span>
+                <span class="type-text">{{ record?.feeType || '-' }}</span>
               </div>
-              <div class="fee-amount" :class="record.isPaid === 1 ? 'text-success' : 'text-danger'">
-                {{ record.isPaid === 1 ? '+' : '-' }}¥{{ record.amount }}
+              <div class="fee-amount" :class="record?.isPaid === 1 ? 'text-success' : 'text-danger'">
+                {{ record?.isPaid === 1 ? '+' : '-' }}¥{{ record?.amount || '0.00' }}
               </div>
             </div>
             <div class="fee-info">
-              <p v-if="record.borrowRecord?.book?.name">
+              <p v-if="record?.borrowRecord?.book?.name">
                 <span>图书：</span>{{ record.borrowRecord.book.name }}
               </p>
-              <p><span>金额：</span>¥{{ record.amount }}</p>
-              <p><span>已缴：</span>¥{{ record.paidAmount }}</p>
-              <p v-if="record.remark"><span>备注：</span>{{ record.remark }}</p>
-              <p><span>时间：</span>{{ record.createTime }}</p>
+              <p><span>金额：</span>¥{{ record?.amount || '0.00' }}</p>
+              <p><span>已缴：</span>¥{{ record?.paidAmount || '0.00' }}</p>
+              <p v-if="record?.remark"><span>备注：</span>{{ record.remark }}</p>
+              <p><span>时间：</span>{{ record?.createTime || '-' }}</p>
             </div>
             <div class="fee-status">
-              <van-tag :type="record.isPaid === 1 ? 'success' : 'danger'" size="small">
-                {{ record.isPaid === 1 ? '已缴纳' : '未缴纳' }}
+              <van-tag :type="record?.isPaid === 1 ? 'success' : 'danger'" size="small">
+                {{ record?.isPaid === 1 ? '已缴纳' : '未缴纳' }}
               </van-tag>
             </div>
           </div>
@@ -109,8 +109,8 @@ const calculateSummary = () => {
   let totalAmount = 0
   let paidAmount = 0
   list.value.forEach(item => {
-    totalAmount += Number(item.amount) || 0
-    paidAmount += Number(item.paidAmount) || 0
+    totalAmount += Number(item?.amount) || 0
+    paidAmount += Number(item?.paidAmount) || 0
   })
   summaryData.value = {
     totalAmount: totalAmount.toFixed(2),
@@ -129,23 +129,22 @@ const onLoad = async () => {
       isPaid: getIsPaidParam()
     })
     
-    if (res.data) {
-      const newList = res.data.list || []
-      if (page.value === 1) {
-        list.value = newList
-      } else {
-        list.value = [...list.value, ...newList]
-      }
-      calculateSummary()
-      
-      if (newList.length < pageSize) {
-        finished.value = true
-      } else {
-        page.value++
-      }
+    const newList = res?.data?.list || []
+    if (page.value === 1) {
+      list.value = newList
+    } else {
+      list.value = [...list.value, ...newList]
+    }
+    calculateSummary()
+    
+    if (newList.length < pageSize) {
+      finished.value = true
+    } else {
+      page.value++
     }
   } catch (error) {
     console.error('加载数据失败:', error)
+    calculateSummary()
   } finally {
     loading.value = false
   }
