@@ -103,7 +103,11 @@ const onLoad = async () => {
     
     if (res.data) {
       const newList = res.data.list || []
-      list.value = [...list.value, ...newList]
+      if (page.value === 1) {
+        list.value = newList
+      } else {
+        list.value = [...list.value, ...newList]
+      }
       
       if (newList.length < pageSize) {
         finished.value = true
