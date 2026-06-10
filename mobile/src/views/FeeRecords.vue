@@ -172,13 +172,13 @@ const onRefresh = () => {
   top: 46px;
   z-index: 100;
   background: #f7f8fa;
-  padding-bottom: 0;
+  padding-bottom: 8px;
 }
 
 .summary-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  margin: 12px;
-  padding: 20px;
+  margin: 12px 12px 8px;
+  padding: 16px;
   border-radius: 12px;
   display: flex;
   justify-content: space-around;
@@ -190,7 +190,7 @@ const onRefresh = () => {
 }
 
 .summary-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   margin-bottom: 4px;
 }
@@ -201,7 +201,8 @@ const onRefresh = () => {
 }
 
 .page-content {
-  padding: 160px 12px 12px;
+  padding: 12px;
+  padding-top: calc(46px + 130px);
 }
 
 .fee-item {
