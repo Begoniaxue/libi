@@ -65,8 +65,10 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { getFeeRecords } from '@/api'
+import { useUserStore } from '@/store/user'
+import { storeToRefs } from 'pinia'
 
 const list = ref([])
 const loading = ref(false)
@@ -74,14 +76,15 @@ const finished = ref(false)
 const refreshing = ref(false)
 const page = ref(1)
 const pageSize = 10
-const readerId = ref(null)
 const activeTab = ref('all')
 const summaryData = ref(null)
 
-onMounted(() => {
-  const stored = localStorage.getItem('readerInfo')
-  if (stored) {
-    readerId.value = JSON.parse(stored).id
+const userStore = useUserStore()
+const { readerInfo } = storeToRefs(userStore)
+
+watch(() => userStore.readerInfo?.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    onRefresh()
   }
 })
 
@@ -114,10 +117,10 @@ const calculateSummary = () => {
 }
 
 const onLoad = async () => {
-  if (!readerId.value) return
+  if (!readerInfo.value?.id) return
   
   try {
-    const res = await getFeeRecords(readerId.value, {
+    const res = await getFeeRecords(readerInfo.value.id, {
       page: page.value,
       size: pageSize,
       isPaid: getIsPaidParam()

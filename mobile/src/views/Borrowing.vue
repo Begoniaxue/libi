@@ -50,9 +50,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { getBorrowingBooks, renewBook } from '@/api'
 import { showToast, showConfirmDialog } from 'vant'
+import { useUserStore } from '@/store/user'
+import { storeToRefs } from 'pinia'
 
 const list = ref([])
 const loading = ref(false)
@@ -60,12 +62,13 @@ const finished = ref(false)
 const refreshing = ref(false)
 const page = ref(1)
 const pageSize = 10
-const readerId = ref(null)
 
-onMounted(() => {
-  const stored = localStorage.getItem('readerInfo')
-  if (stored) {
-    readerId.value = JSON.parse(stored).id
+const userStore = useUserStore()
+const { readerInfo } = storeToRefs(userStore)
+
+watch(() => userStore.readerInfo?.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    onRefresh()
   }
 })
 
@@ -97,10 +100,10 @@ const handleRenew = async (record) => {
 }
 
 const onLoad = async () => {
-  if (!readerId.value) return
+  if (!readerInfo.value?.id) return
   
   try {
-    const res = await getBorrowingBooks(readerId.value, {
+    const res = await getBorrowingBooks(readerInfo.value.id, {
       page: page.value,
       size: pageSize
     })

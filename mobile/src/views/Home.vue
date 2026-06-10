@@ -86,27 +86,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getReaderInfo } from '@/api'
+import { ref, watch } from 'vue'
 import { showLoadingToast, closeToast } from 'vant'
+import { useUserStore } from '@/store/user'
+import { storeToRefs } from 'pinia'
 
 const active = ref(0)
-const readerInfo = ref(null)
-const readerInfoData = ref(null)
+const userStore = useUserStore()
+const { readerInfo, readerInfoData } = storeToRefs(userStore)
 
 const loadData = async () => {
-  const stored = localStorage.getItem('readerInfo')
-  if (stored) {
-    readerInfo.value = JSON.parse(stored)
-    
+  if (userStore.isLoggedIn) {
     showLoadingToast({
       message: '加载中...',
       forbidClick: true
     })
     
     try {
-      const res = await getReaderInfo(readerInfo.value.id)
-      readerInfoData.value = res.data
+      await userStore.loadReaderInfoData()
     } catch (error) {
       console.error('加载数据失败:', error)
     } finally {
@@ -115,9 +112,11 @@ const loadData = async () => {
   }
 }
 
-onMounted(() => {
-  loadData()
-})
+watch(() => userStore.readerInfo?.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    loadData()
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>

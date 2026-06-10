@@ -69,27 +69,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { showConfirmDialog, showToast } from 'vant'
+import { useUserStore } from '@/store/user'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const userStore = useUserStore()
+const { readerInfo } = storeToRefs(userStore)
 const active = ref(2)
-const readerInfo = ref(null)
 
-onMounted(() => {
-  const stored = localStorage.getItem('readerInfo')
-  if (stored) {
-    readerInfo.value = JSON.parse(stored)
+watch(() => userStore.isLoggedIn, (loggedIn) => {
+  if (!loggedIn) {
+    router.push('/login')
   }
-})
+}, { immediate: true })
 
 const logout = () => {
   showConfirmDialog({
     title: '提示',
     message: '确定要退出登录吗？'
   }).then(() => {
-    localStorage.removeItem('readerInfo')
+    userStore.logout()
     showToast('已退出登录')
     setTimeout(() => {
       router.push('/login')

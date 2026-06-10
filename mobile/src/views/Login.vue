@@ -34,9 +34,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showLoadingToast, closeToast } from 'vant'
-import { loginByCardNo } from '@/api'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const cardNo = ref('')
 
 const onSubmit = async () => {
@@ -46,9 +47,8 @@ const onSubmit = async () => {
       forbidClick: true
     })
     
-    const res = await loginByCardNo(cardNo.value)
-    if (res.data) {
-      localStorage.setItem('readerInfo', JSON.stringify(res.data))
+    const reader = await userStore.login(cardNo.value)
+    if (reader) {
       showToast('登录成功')
       setTimeout(() => {
         router.push('/home')
@@ -58,6 +58,7 @@ const onSubmit = async () => {
     }
   } catch (error) {
     console.error('登录失败:', error)
+    showToast('登录失败，请重试')
   } finally {
     closeToast()
   }

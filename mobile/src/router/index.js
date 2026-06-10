@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { useUserStore } from '@/store/user'
 
 const routes = [
   {
@@ -72,8 +73,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const userStore = localStorage.getItem('readerInfo')
-  if (to.meta.requiresAuth && !userStore) {
+  const userStore = useUserStore()
+  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next('/login')
   } else {
     next()
