@@ -2,26 +2,28 @@
   <div class="fee-page">
     <van-nav-bar title="罚款明细" left-arrow @click-left="$router.back()" fixed placeholder />
 
-    <div class="summary-card" v-if="summaryData">
-      <div class="summary-item">
-        <div class="summary-value">¥{{ summaryData.totalAmount }}</div>
-        <div class="summary-label">总罚款</div>
+    <div class="sticky-wrapper">
+      <div class="summary-card" v-if="summaryData">
+        <div class="summary-item">
+          <div class="summary-value">¥{{ summaryData.totalAmount }}</div>
+          <div class="summary-label">总罚款</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value text-success">¥{{ summaryData.paidAmount }}</div>
+          <div class="summary-label">已缴纳</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value text-danger">¥{{ summaryData.unpaidAmount }}</div>
+          <div class="summary-label">待缴纳</div>
+        </div>
       </div>
-      <div class="summary-item">
-        <div class="summary-value text-success">¥{{ summaryData.paidAmount }}</div>
-        <div class="summary-label">已缴纳</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-value text-danger">¥{{ summaryData.unpaidAmount }}</div>
-        <div class="summary-label">待缴纳</div>
-      </div>
-    </div>
 
-    <van-tabs v-model:active="activeTab" sticky offset-top="140px">
-      <van-tab title="全部" name="all" />
-      <van-tab title="未缴纳" name="unpaid" />
-      <van-tab title="已缴纳" name="paid" />
-    </van-tabs>
+      <van-tabs v-model:active="activeTab">
+        <van-tab title="全部" name="all" />
+        <van-tab title="未缴纳" name="unpaid" />
+        <van-tab title="已缴纳" name="paid" />
+      </van-tabs>
+    </div>
 
     <div class="page-content">
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
@@ -166,6 +168,14 @@ const onRefresh = () => {
   background: #f7f8fa;
 }
 
+.sticky-wrapper {
+  position: sticky;
+  top: 46px;
+  z-index: 100;
+  background: #f7f8fa;
+  padding-bottom: 0;
+}
+
 .summary-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   margin: 12px;
@@ -192,7 +202,7 @@ const onRefresh = () => {
 }
 
 .page-content {
-  padding: 12px;
+  padding: 160px 12px 12px;
 }
 
 .fee-item {
