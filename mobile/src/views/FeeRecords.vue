@@ -172,12 +172,19 @@ const onRefresh = () => {
   top: 46px;
   z-index: 100;
   background: #f7f8fa;
-  padding-bottom: 8px;
+}
+
+.sticky-wrapper :deep(.van-tabs) {
+  background: #f7f8fa;
+}
+
+.sticky-wrapper :deep(.van-tabs__wrap) {
+  border-bottom: none;
 }
 
 .summary-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  margin: 12px 12px 8px;
+  margin: 12px;
   padding: 16px;
   border-radius: 12px;
   display: flex;
@@ -201,8 +208,17 @@ const onRefresh = () => {
 }
 
 .page-content {
-  padding: 12px;
-  padding-top: calc(46px + 130px);
+  padding: 0 12px 12px;
+}
+
+.page-content :deep(.van-pull-refresh) {
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.page-content :deep(.van-list) {
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .fee-item {
