@@ -48,4 +48,14 @@ public interface FeeRecordRepository extends JpaRepository<FeeRecord, Long> {
 
     @Query("SELECT fr FROM FeeRecord fr WHERE fr.isPaid = 0")
     List<FeeRecord> findUnpaidRecords();
+
+    Page<FeeRecord> findByReaderIdOrderByCreateTimeDesc(Long readerId, Pageable pageable);
+
+    Page<FeeRecord> findByReaderIdAndIsPaidOrderByCreateTimeDesc(Long readerId, Integer isPaid, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(fr.amount - fr.paidAmount), 0) FROM FeeRecord fr WHERE fr.readerId = :readerId AND fr.isPaid = 0")
+    BigDecimal sumUnpaidAmountByReaderId(@Param("readerId") Long readerId);
+
+    @Query("SELECT COUNT(fr) FROM FeeRecord fr WHERE fr.readerId = :readerId AND fr.isPaid = 0")
+    long countUnpaidRecordsByReaderId(@Param("readerId") Long readerId);
 }

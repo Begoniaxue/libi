@@ -77,4 +77,14 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     @Query("SELECT b FROM Book b WHERE b.status = 1 " +
            "AND b.id NOT IN (SELECT DISTINCT br.bookId FROM BorrowRecord br)")
     List<Book> findNeverBorrowedBooks();
+
+    Page<Book> findByNameContainingAndAuthorContainingAndIsbnContainingAndCategoryContainingAndPublisherContaining(
+            String name, String author, String isbn, String category, String publisher, Pageable pageable);
+
+    @Query("SELECT b FROM Book b WHERE b.status = 1 AND " +
+           "(b.name LIKE %?1% OR b.author LIKE %?1% OR b.isbn LIKE %?1% OR " +
+           "b.category LIKE %?1% OR b.publisher LIKE %?1%)")
+    Page<Book> findByFuzzySearch(String keyword, Pageable pageable);
+
+    List<Book> findByCategory(String category);
 }

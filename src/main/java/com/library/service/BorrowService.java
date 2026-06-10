@@ -4,9 +4,11 @@ import com.library.config.LibraryConfig;
 import com.library.entity.Book;
 import com.library.entity.BorrowRecord;
 import com.library.entity.Reader;
+import com.library.entity.RenewLog;
 import com.library.repository.BookRepository;
 import com.library.repository.BorrowRecordRepository;
 import com.library.repository.ReaderRepository;
+import com.library.repository.RenewLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +37,9 @@ public class BorrowService {
 
     @Autowired
     private LibraryConfig libraryConfig;
+
+    @Autowired
+    private RenewLogRepository renewLogRepository;
 
     public Map<String, Object> getRecordPage(int page, int size, Long readerId, Long bookId, Integer status) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createTime"));
@@ -169,5 +174,73 @@ public class BorrowService {
 
     public BorrowRecord getRecordById(Long id) {
         return borrowRecordRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public BorrowRecord renewBook(Long recordId) {
+        BorrowRecord record = borrowRecordRepository.findById(recordId).orElse(null);
+        if (record == null) {
+            throw new RuntimeException("借阅记录不存在");
+        }
+        if (record.getStatus() != 1) {
+            throw new RuntimeException("该图书已归还或已逾期，无法续借");
+        }
+        if (record.getIsOverdue() == 1) {
+            throw new RuntimeException("该图书已逾期，无法续借");
+        }
+        if (record.getRenewCount() >= 1) {
+            throw new RuntimeException("该图书已续借过，无法再次续借");
+        }
+
+        Reader reader = readerRepository.findById(record.getReaderId()).orElse(null);
+        if (reader == null) {
+            throw new RuntimeException("读者不存在");
+        }
+        if (reader.getViolationCount() > 0) {
+            throw new RuntimeException("读者存在违规记录，无法续借");
+        }
+
+        long overdueCount = borrowRecordRepository.countOverdueByReaderId(record.getReaderId());
+        if (overdueCount > 0) {
+            throw new RuntimeException("读者存在逾期图书，无法续借");
+        }
+
+        LocalDate oldDueDate = record.getDueDate();
+        LocalDate newDueDate = oldDueDate.plusDays(libraryConfig.getBorrowDays());
+        int renewDays = libraryConfig.getBorrowDays();
+
+        record.setDueDate(newDueDate);
+        record.setRenewCount(record.getRenewCount() + 1);
+        record.setLastRenewDate(LocalDate.now());
+
+        RenewLog renewLog = new RenewLog();
+        renewLog.setBorrowRecordId(recordId);
+        renewLog.setReaderId(record.getReaderId());
+        renewLog.setBookId(record.getBookId());
+        renewLog.setOldDueDate(oldDueDate);
+        renewLog.setNewDueDate(newDueDate);
+        renewLog.setRenewDays(renewDays);
+        renewLog.setOperator("读者自助");
+        renewLog.setRemark("线上续借");
+        renewLogRepository.save(renewLog);
+
+        return borrowRecordRepository.save(record);
+    }
+
+    public Map<String, Object> getRenewLogPage(int page, int size, Long readerId) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createTime"));
+        Page<RenewLog> logPage;
+        if (readerId != null) {
+            logPage = renewLogRepository.findByReaderIdOrderByCreateTimeDesc(readerId, pageable);
+        } else {
+            logPage = renewLogRepository.findAll(pageable);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", logPage.getContent());
+        result.put("total", logPage.getTotalElements());
+        result.put("pages", logPage.getTotalPages());
+        result.put("current", page);
+        result.put("size", size);
+        return result;
     }
 }

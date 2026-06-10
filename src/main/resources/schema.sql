@@ -107,6 +107,26 @@ INSERT INTO book (isbn, name, author, publisher, category, description, location
 ('9787532754688', '百年孤独', '加西亚·马尔克斯', '上海译文出版社', '外国文学', '魔幻现实主义代表作', 'A区05架', 3, 3),
 ('9787020101153', '平凡的世界', '路遥', '人民文学出版社', '现代文学', '茅盾文学奖获奖作品', 'A区03架', 4, 4);
 
+CREATE TABLE IF NOT EXISTS renew_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    borrow_record_id BIGINT NOT NULL COMMENT '借阅记录ID',
+    reader_id BIGINT NOT NULL COMMENT '读者ID',
+    book_id BIGINT NOT NULL COMMENT '图书ID',
+    old_due_date DATE NOT NULL COMMENT '原到期日期',
+    new_due_date DATE NOT NULL COMMENT '新到期日期',
+    renew_days INT NOT NULL COMMENT '续借天数',
+    operator VARCHAR(50) COMMENT '操作人',
+    remark VARCHAR(500) COMMENT '备注',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    FOREIGN KEY (borrow_record_id) REFERENCES borrow_record(id),
+    FOREIGN KEY (reader_id) REFERENCES reader(id),
+    FOREIGN KEY (book_id) REFERENCES book(id),
+    INDEX idx_borrow_record_id(borrow_record_id),
+    INDEX idx_reader_id(reader_id),
+    INDEX idx_book_id(book_id),
+    INDEX idx_create_time(create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='续借日志表';
+
 INSERT INTO reader (card_no, name, gender, phone, email, id_card, address) VALUES
 ('R2024001', '张三', 1, '13800138001', 'zhangsan@example.com', '110101199001011234', '北京市海淀区'),
 ('R2024002', '李四', 2, '13800138002', 'lisi@example.com', '110101199002022345', '北京市朝阳区'),

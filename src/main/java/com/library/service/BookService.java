@@ -95,4 +95,41 @@ public class BookService {
         stats.put("availableQuantity", bookRepository.sumAvailableQuantity());
         return stats;
     }
+
+    public Map<String, Object> searchBooks(int page, int size, String keyword, String name, String author,
+                                          String isbn, String category, String publisher) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createTime"));
+        Page<Book> bookPage;
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            bookPage = bookRepository.findByFuzzySearch(keyword, pageable);
+        } else if (name != null || author != null || isbn != null || category != null || publisher != null) {
+            bookPage = bookRepository.findByNameContainingAndAuthorContainingAndIsbnContainingAndCategoryContainingAndPublisherContaining(
+                    (name != null && !name.trim().isEmpty()) ? name : "",
+                    (author != null && !author.trim().isEmpty()) ? author : "",
+                    (isbn != null && !isbn.trim().isEmpty()) ? isbn : "",
+                    (category != null && !category.trim().isEmpty()) ? category : "",
+                    (publisher != null && !publisher.trim().isEmpty()) ? publisher : "",
+                    pageable);
+        } else {
+            bookPage = bookRepository.findAll(pageable);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", bookPage.getContent());
+        result.put("total", bookPage.getTotalElements());
+        result.put("pages", bookPage.getTotalPages());
+        result.put("current", page);
+        result.put("size", size);
+        return result;
+    }
+
+    public List<String> getAllCategories() {
+        List<Object[]> categoryStats = bookRepository.countByCategory();
+        return categoryStats.stream()
+                .map(row -> (String) row[0])
+                .filter(cat -> cat != null && !cat.trim().isEmpty())
+                .distinct()
+                .toList();
+    }
 }
