@@ -3,7 +3,7 @@
     <van-nav-bar title="罚款明细" left-arrow @click-left="$router.back()" fixed placeholder />
 
     <div class="sticky-wrapper">
-      <div class="summary-card" v-if="summaryData">
+      <div class="summary-card" v-show="summaryData">
         <div class="summary-item">
           <div class="summary-value">¥{{ summaryData.totalAmount }}</div>
           <div class="summary-label">总罚款</div>
@@ -86,6 +86,7 @@ const { readerInfo } = storeToRefs(userStore)
 
 watch(() => userStore.readerInfo?.id, (newId, oldId) => {
   if (newId && newId !== oldId) {
+    summaryData.value = null
     onRefresh()
   }
 })
@@ -154,7 +155,6 @@ const onRefresh = () => {
   refreshing.value = true
   page.value = 1
   list.value = []
-  summaryData.value = null
   finished.value = false
   onLoad().finally(() => {
     refreshing.value = false
