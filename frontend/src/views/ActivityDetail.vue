@@ -254,12 +254,21 @@ const handleCancelRegistration = (row) => {
 
 const handleExport = async () => {
   try {
-    const res = await exportRegistrations(activityId)
-    const blob = new Blob([res], { type: 'text/csv;charset=utf-8' })
+    const response = await exportRegistrations(activityId)
+    const blob = response.data
+    let fileName = `${activity.value.name || '活动报名'}_${dayjs().format('YYYYMMDD_HHmmss')}.csv`
+    const disposition = response.headers['content-disposition']
+    if (disposition) {
+      const matches = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (matches != null && matches[1]) {
+        fileName = matches[1].replace(/['"]/g, '')
+        fileName = decodeURIComponent(fileName)
+      }
+    }
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${activity.value.name || '活动报名'}_${dayjs().format('YYYYMMDD_HHmmss')}.csv`
+    link.download = fileName
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -267,6 +276,7 @@ const handleExport = async () => {
     ElMessage.success('导出成功')
   } catch (error) {
     console.error('导出失败', error)
+    ElMessage.error('导出失败')
   }
 }
 

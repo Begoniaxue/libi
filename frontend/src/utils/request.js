@@ -8,6 +8,14 @@ const request = axios.create({
 
 request.interceptors.response.use(
   response => {
+    if (response.config.responseType === 'blob') {
+      if (response.status === 200) {
+        return response
+      } else {
+        ElMessage.error('文件下载失败')
+        return Promise.reject(new Error('文件下载失败'))
+      }
+    }
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.message || '请求失败')
