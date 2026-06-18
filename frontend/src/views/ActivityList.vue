@@ -292,10 +292,17 @@ const loadData = async () => {
       size: pagination.size,
       keyword: keyword.value
     })
-    tableData.value = res.data.list
-    pagination.total = res.data.total
+    if (res.code === 200) {
+      tableData.value = res.data.list
+      pagination.total = res.data.total
+    } else {
+      tableData.value = []
+      pagination.total = 0
+    }
   } catch (error) {
     console.error('加载活动列表失败', error)
+    tableData.value = []
+    pagination.total = 0
   }
 }
 

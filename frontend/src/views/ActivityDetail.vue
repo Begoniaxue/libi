@@ -6,7 +6,7 @@
       </template>
     </el-page-header>
 
-    <el-row :gutter="20">
+    <el-row :gutter="20" v-if="activity">
       <el-col :span="16">
         <el-card shadow="never">
           <template #header>
@@ -314,7 +314,7 @@ const route = useRoute()
 const router = useRouter()
 const activityId = route.params.id
 
-const activity = ref({})
+const activity = ref(null)
 const registrationList = ref([])
 const searchKeyword = ref('')
 const editDialogVisible = ref(false)
@@ -322,6 +322,7 @@ const editFormRef = ref(null)
 const editorRef = ref(null)
 const fontSize = ref('3')
 const fontColor = ref('#303133')
+const loading = ref(true)
 
 const regPagination = reactive({
   current: 1,
@@ -361,9 +362,16 @@ const goBack = () => {
 const loadActivity = async () => {
   try {
     const res = await getActivityById(activityId)
-    activity.value = res.data
+    if (res.code === 200) {
+      activity.value = res.data
+    } else {
+      activity.value = null
+    }
   } catch (error) {
     console.error('加载活动详情失败', error)
+    activity.value = null
+  } finally {
+    loading.value = false
   }
 }
 
@@ -374,10 +382,17 @@ const loadRegistrations = async () => {
       size: regPagination.size,
       keyword: searchKeyword.value
     })
-    registrationList.value = res.data.list
-    regPagination.total = res.data.total
+    if (res.code === 200) {
+      registrationList.value = res.data.list
+      regPagination.total = res.data.total
+    } else {
+      registrationList.value = []
+      regPagination.total = 0
+    }
   } catch (error) {
     console.error('加载报名名单失败', error)
+    registrationList.value = []
+    regPagination.total = 0
   }
 }
 
@@ -427,6 +442,7 @@ const handleExport = async () => {
 }
 
 const handleEdit = () => {
+  if (!activity.value) return
   Object.assign(editForm, {
     id: activity.value.id,
     name: activity.value.name,
@@ -517,10 +533,15 @@ const handleDialogClosed = () => {
   if (editFormRef.value) {
     editFormRef.value.resetFields()
   }
+  if (editorRef.value) {
+    editorRef.value.innerHTML = ''
+  }
 }
 
 onMounted(() => {
-  loadActivity()
+  loadActivity().finally(() => {
+    loading.value = false
+  })
   loadRegistrations()
 })
 </script>
