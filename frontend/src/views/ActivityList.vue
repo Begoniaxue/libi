@@ -65,7 +65,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleDetail(row)">
               详情
@@ -73,7 +73,28 @@
             <el-button type="warning" size="small" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
+            <el-button
+              v-if="row.status === 0"
+              type="success"
+              size="small"
+              @click="handleToggleStatus(row, 1)"
+            >
+              上架
+            </el-button>
+            <el-button
+              v-if="row.status === 1"
+              type="info"
+              size="small"
+              @click="handleToggleStatus(row, 0)"
+            >
+              下架
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              :disabled="row.status === 1"
+              @click="handleDelete(row)"
+            >
               删除
             </el-button>
           </template>
@@ -121,6 +142,7 @@
                 placeholder="选择开始时间"
                 style="width: 100%;"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled-date="disableStartDate"
               />
             </el-form-item>
           </el-col>
@@ -132,6 +154,7 @@
                 placeholder="选择结束时间"
                 style="width: 100%;"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled-date="disableEndDate"
               />
             </el-form-item>
           </el-col>
@@ -308,12 +331,52 @@ const handleEdit = (row) => {
   })
 }
 
+const disableStartDate = (time) => {
+  if (form.endTime) {
+    const endTime = dayjs(form.endTime)
+    return time.getTime() > endTime.valueOf()
+  }
+  return false
+}
+
+const disableEndDate = (time) => {
+  if (form.startTime) {
+    const startTime = dayjs(form.startTime)
+    return time.getTime() < startTime.valueOf()
+  }
+  return false
+}
+
 const handleDetail = (row) => {
   router.push(`/activities/${row.id}`)
 }
 
+const handleToggleStatus = (row, targetStatus) => {
+  const actionName = targetStatus === 1 ? '上架' : '下架'
+  ElMessageBox.confirm(`确定要${actionName}该活动吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await updateActivity({
+        id: row.id,
+        status: targetStatus
+      })
+      ElMessage.success(`${actionName}成功`)
+      loadData()
+    } catch (error) {
+      console.error(`${actionName}失败`, error)
+    }
+  }).catch(() => {})
+}
+
 const handleDelete = (row) => {
-  ElMessageBox.confirm('确定要删除该活动吗？', '提示', {
+  if (row.status === 1) {
+    ElMessage.warning('已上架的活动不允许删除，请先下架')
+    return
+  }
+  ElMessageBox.confirm('确定要删除该活动吗？删除后数据不可恢复！', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'

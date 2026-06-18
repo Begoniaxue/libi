@@ -73,8 +73,31 @@ public class ActivityService {
         if (exist == null) {
             throw new RuntimeException("活动不存在");
         }
-        activity.setRegisteredCount(exist.getRegisteredCount());
-        return activityRepository.save(activity);
+        if (activity.getName() != null) {
+            exist.setName(activity.getName());
+        }
+        if (activity.getCoverImage() != null) {
+            exist.setCoverImage(activity.getCoverImage());
+        }
+        if (activity.getContent() != null) {
+            exist.setContent(activity.getContent());
+        }
+        if (activity.getStartTime() != null) {
+            exist.setStartTime(activity.getStartTime());
+        }
+        if (activity.getEndTime() != null) {
+            exist.setEndTime(activity.getEndTime());
+        }
+        if (activity.getLocation() != null) {
+            exist.setLocation(activity.getLocation());
+        }
+        if (activity.getQuota() != null) {
+            exist.setQuota(activity.getQuota());
+        }
+        if (activity.getStatus() != null) {
+            exist.setStatus(activity.getStatus());
+        }
+        return activityRepository.save(exist);
     }
 
     @Transactional

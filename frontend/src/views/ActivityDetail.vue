@@ -204,6 +204,7 @@
                 placeholder="选择开始时间"
                 style="width: 100%;"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled-date="disableStartDate"
               />
             </el-form-item>
           </el-col>
@@ -215,6 +216,7 @@
                 placeholder="选择结束时间"
                 style="width: 100%;"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled-date="disableEndDate"
               />
             </el-form-item>
           </el-col>
@@ -442,6 +444,22 @@ const handleEdit = () => {
       editorRef.value.innerHTML = activity.value.content || ''
     }
   })
+}
+
+const disableStartDate = (time) => {
+  if (editForm.endTime) {
+    const endTime = dayjs(editForm.endTime)
+    return time.getTime() > endTime.valueOf()
+  }
+  return false
+}
+
+const disableEndDate = (time) => {
+  if (editForm.startTime) {
+    const startTime = dayjs(editForm.startTime)
+    return time.getTime() < startTime.valueOf()
+  }
+  return false
 }
 
 const execCommand = (command, value = null) => {
