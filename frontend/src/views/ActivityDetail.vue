@@ -173,11 +173,129 @@
         style="margin-top: 20px; justify-content: flex-end;"
       />
     </el-card>
+
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑活动"
+      width="900px"
+      :close-on-click-modal="false"
+      @closed="handleDialogClosed"
+    >
+      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="活动名称" prop="name">
+              <el-input v-model="editForm.name" placeholder="请输入活动名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="主图链接" prop="coverImage">
+              <el-input v-model="editForm.coverImage" placeholder="请输入图片URL" />
+              <div v-if="editForm.coverImage" style="margin-top: 10px;">
+                <el-image :src="editForm.coverImage" style="width: 200px; height: 120px;" fit="cover" />
+              </div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="开始时间" prop="startTime">
+              <el-date-picker
+                v-model="editForm.startTime"
+                type="datetime"
+                placeholder="选择开始时间"
+                style="width: 100%;"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="结束时间" prop="endTime">
+              <el-date-picker
+                v-model="editForm.endTime"
+                type="datetime"
+                placeholder="选择结束时间"
+                style="width: 100%;"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="活动地点" prop="location">
+              <el-input v-model="editForm.location" placeholder="请输入活动地点" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="活动名额" prop="quota">
+              <el-input-number v-model="editForm.quota" :min="1" :max="10000" style="width: 100%;" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="editForm.status">
+                <el-radio :value="1">发布</el-radio>
+                <el-radio :value="0">下架</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="活动内容" prop="content">
+              <div class="rich-editor">
+                <div class="editor-toolbar">
+                  <el-button-group>
+                    <el-button size="small" @click="execCommand('bold')"><b>B</b></el-button>
+                    <el-button size="small" @click="execCommand('italic')"><i>I</i></el-button>
+                    <el-button size="small" @click="execCommand('underline')"><u>U</u></el-button>
+                    <el-button size="small" @click="execCommand('strikeThrough')"><s>S</s></el-button>
+                  </el-button-group>
+                  <el-button-group style="margin-left: 10px;">
+                    <el-button size="small" @click="execCommand('justifyLeft')">左对齐</el-button>
+                    <el-button size="small" @click="execCommand('justifyCenter')">居中</el-button>
+                    <el-button size="small" @click="execCommand('justifyRight')">右对齐</el-button>
+                  </el-button-group>
+                  <el-button-group style="margin-left: 10px;">
+                    <el-button size="small" @click="execCommand('insertUnorderedList')">无序列表</el-button>
+                    <el-button size="small" @click="execCommand('insertOrderedList')">有序列表</el-button>
+                  </el-button-group>
+                  <el-select
+                    v-model="fontSize"
+                    size="small"
+                    style="width: 100px; margin-left: 10px;"
+                    @change="changeFontSize"
+                    placeholder="字号"
+                  >
+                    <el-option label="小" value="2" />
+                    <el-option label="中" value="3" />
+                    <el-option label="大" value="5" />
+                    <el-option label="特大" value="7" />
+                  </el-select>
+                  <el-color-picker
+                    v-model="fontColor"
+                    size="small"
+                    style="margin-left: 10px;"
+                    @change="changeFontColor"
+                  />
+                </div>
+                <div
+                  ref="editorRef"
+                  class="editor-content"
+                  contenteditable="true"
+                  @input="onEditorInput"
+                  @blur="onEditorBlur"
+                />
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveEdit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Edit } from '@element-plus/icons-vue'
@@ -185,7 +303,8 @@ import {
   getActivityById,
   getRegistrationList,
   cancelRegistration,
-  exportRegistrations
+  exportRegistrations,
+  updateActivity
 } from '@/api/activity'
 import dayjs from 'dayjs'
 
@@ -196,12 +315,37 @@ const activityId = route.params.id
 const activity = ref({})
 const registrationList = ref([])
 const searchKeyword = ref('')
+const editDialogVisible = ref(false)
+const editFormRef = ref(null)
+const editorRef = ref(null)
+const fontSize = ref('3')
+const fontColor = ref('#303133')
 
 const regPagination = reactive({
   current: 1,
   size: 10,
   total: 0
 })
+
+const editForm = reactive({
+  id: null,
+  name: '',
+  coverImage: '',
+  content: '',
+  startTime: '',
+  endTime: '',
+  location: '',
+  quota: 50,
+  status: 1
+})
+
+const editRules = {
+  name: [{ required: true, message: '请输入活动名称', trigger: 'blur' }],
+  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+  location: [{ required: true, message: '请输入活动地点', trigger: 'blur' }],
+  quota: [{ required: true, message: '请输入活动名额', trigger: 'blur' }]
+}
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return ''
@@ -281,7 +425,80 @@ const handleExport = async () => {
 }
 
 const handleEdit = () => {
-  router.push('/activities')
+  Object.assign(editForm, {
+    id: activity.value.id,
+    name: activity.value.name,
+    coverImage: activity.value.coverImage || '',
+    content: activity.value.content || '',
+    startTime: activity.value.startTime,
+    endTime: activity.value.endTime,
+    location: activity.value.location,
+    quota: activity.value.quota,
+    status: activity.value.status
+  })
+  editDialogVisible.value = true
+  nextTick(() => {
+    if (editorRef.value) {
+      editorRef.value.innerHTML = activity.value.content || ''
+    }
+  })
+}
+
+const execCommand = (command, value = null) => {
+  document.execCommand(command, false, value)
+  editorRef.value?.focus()
+}
+
+const changeFontSize = (val) => {
+  document.execCommand('fontSize', false, val)
+  editorRef.value?.focus()
+}
+
+const changeFontColor = (val) => {
+  document.execCommand('foreColor', false, val)
+  editorRef.value?.focus()
+}
+
+const onEditorInput = () => {
+  if (editorRef.value) {
+    editForm.content = editorRef.value.innerHTML
+  }
+}
+
+const onEditorBlur = () => {
+  if (editorRef.value) {
+    editForm.content = editorRef.value.innerHTML
+  }
+}
+
+const handleSaveEdit = async () => {
+  if (!editFormRef.value) return
+  await editFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        if (!editForm.content || editForm.content.trim() === '') {
+          ElMessage.warning('请输入活动内容')
+          return
+        }
+        if (editForm.startTime && editForm.endTime && dayjs(editForm.startTime).isAfter(dayjs(editForm.endTime))) {
+          ElMessage.warning('开始时间不能晚于结束时间')
+          return
+        }
+        await updateActivity(editForm)
+        ElMessage.success('保存成功')
+        editDialogVisible.value = false
+        loadActivity()
+      } catch (error) {
+        console.error('保存失败', error)
+      }
+    }
+  })
+}
+
+const handleDialogClosed = () => {
+  if (editFormRef.value) {
+    editFormRef.value.resetFields()
+  }
 }
 
 onMounted(() => {
@@ -356,5 +573,44 @@ onMounted(() => {
 
 .stats-value.success {
   color: #67C23A;
+}
+
+.rich-editor {
+  width: 100%;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #dcdfe6;
+  gap: 8px;
+}
+
+.editor-content {
+  min-height: 200px;
+  max-height: 400px;
+  padding: 12px;
+  overflow-y: auto;
+  background-color: #fff;
+}
+
+.editor-content:focus {
+  outline: none;
+}
+
+.editor-content:deep(p) {
+  margin: 8px 0;
+}
+
+.editor-content:deep(ul),
+.editor-content:deep(ol) {
+  margin: 8px 0;
+  padding-left: 24px;
 }
 </style>
