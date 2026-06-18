@@ -35,6 +35,17 @@ const routes = [
     component: () => import('@/views/BorrowRecord.vue')
   },
   {
+    path: '/activities',
+    name: 'Activities',
+    component: () => import('@/views/ActivityList.vue')
+  },
+  {
+    path: '/activities/:id',
+    name: 'ActivityDetail',
+    component: () => import('@/views/ActivityDetail.vue'),
+    meta: { title: '活动详情' }
+  },
+  {
     path: '/statistics/collection',
     name: 'CollectionStats',
     component: () => import('@/views/statistics/CollectionStats.vue'),

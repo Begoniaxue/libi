@@ -29,6 +29,10 @@
           <el-icon><DocumentCopy /></el-icon>
           <span>借阅管理</span>
         </el-menu-item>
+        <el-menu-item index="/activities">
+          <el-icon><Calendar /></el-icon>
+          <span>活动管理</span>
+        </el-menu-item>
         <el-sub-menu index="statistics">
           <template #title>
             <el-icon><DataAnalysis /></el-icon>
@@ -81,7 +85,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  Reading, DataLine, User, DocumentCopy, DataAnalysis,
+  Reading, DataLine, User, DocumentCopy, DataAnalysis, Calendar,
   Collection, Document, Avatar, TrendCharts, Money, DocumentChecked, Monitor
 } from '@element-plus/icons-vue'
 
@@ -97,6 +101,7 @@ const pageTitle = computed(() => {
     '/books': '图书管理',
     '/readers': '读者管理',
     '/borrow': '借阅管理',
+    '/activities': '活动管理',
     '/statistics/collection': '馆藏统计',
     '/statistics/borrow': '借阅统计',
     '/statistics/reader': '读者统计',
